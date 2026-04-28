@@ -15,13 +15,40 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use('/api/traders', traderRoutes);
-app.use('/api/general', generalRoutes);
+// Connect to MongoDB
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/scooter_db';
+
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  try {
+    await mongoose.connect(MONGODB_URI);
+    isConnected = true;
+    console.log('Connected to MongoDB');
+  } catch (error) {
+    console.error('Error connecting to MongoDB:', error.message);
+    throw error;
+  }
+};
+
+// Connect before handling any request (MUST be before routes for serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({ message: 'Database connection failed' });
+  }
+});
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'Server is running!' });
+  res.json({ status: 'Server is running!', db: isConnected ? 'connected' : 'disconnected' });
 });
+
+// Routes (AFTER DB middleware)
+app.use('/api/traders', traderRoutes);
+app.use('/api/general', generalRoutes);
 
 // Dashboard
 app.get('/api/dashboard', async (req, res) => {
@@ -55,27 +82,6 @@ app.get('/api/dashboard', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
-
-// Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/scooter_db';
-
-let isConnected = false;
-const connectDB = async () => {
-  if (isConnected) return;
-  try {
-    await mongoose.connect(MONGODB_URI);
-    isConnected = true;
-    console.log('Connected to MongoDB');
-  } catch (error) {
-    console.error('Error connecting to MongoDB:', error.message);
-  }
-};
-
-// Connect before handling any request (for serverless)
-app.use(async (req, res, next) => {
-  await connectDB();
-  next();
 });
 
 // For local development
