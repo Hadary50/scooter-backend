@@ -117,4 +117,32 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
   }
 });
 
+// Delete a transaction
+router.delete('/:traderId/transactions/:txId', async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.traderId);
+    if (!trader) return res.status(404).json({ message: 'Trader not found' });
+
+    const transaction = await TraderTransaction.findById(req.params.txId);
+    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
+    if (transaction.traderId.toString() !== trader._id.toString()) {
+      return res.status(400).json({ message: 'Transaction does not belong to this trader' });
+    }
+
+    // Revert transaction effect on balance
+    if (transaction.type === 'purchase') {
+      trader.balance -= transaction.amount;
+    } else if (transaction.type === 'payment') {
+      trader.balance += transaction.amount;
+    }
+
+    await TraderTransaction.findByIdAndDelete(req.params.txId);
+    await trader.save();
+
+    res.json({ message: 'Transaction deleted successfully', newBalance: trader.balance });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;
