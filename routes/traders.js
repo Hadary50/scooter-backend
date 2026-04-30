@@ -43,14 +43,15 @@ router.post('/:id/transactions', async (req, res) => {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
 
-    const { type, amount, scooterModel, notes } = req.body;
+    const { type, amount, scooterModel, notes, date } = req.body;
     
     const transaction = new TraderTransaction({
       traderId: trader._id,
       type,
       amount: Number(amount),
       scooterModel,
-      notes
+      notes,
+      date: date ? new Date(date) : Date.now()
     });
 
     await transaction.save();
@@ -64,6 +65,53 @@ router.post('/:id/transactions', async (req, res) => {
     
     await trader.save();
     res.status(201).json({ transaction, newBalance: trader.balance });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Edit a transaction
+router.put('/:traderId/transactions/:txId', async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.traderId);
+    if (!trader) return res.status(404).json({ message: 'Trader not found' });
+
+    const transaction = await TraderTransaction.findById(req.params.txId);
+    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
+    if (transaction.traderId.toString() !== trader._id.toString()) {
+      return res.status(400).json({ message: 'Transaction does not belong to this trader' });
+    }
+
+    const { type, amount, scooterModel, notes, date } = req.body;
+
+    // Revert old transaction effect on balance
+    if (transaction.type === 'purchase') {
+      trader.balance -= transaction.amount;
+    } else if (transaction.type === 'payment') {
+      trader.balance += transaction.amount;
+    }
+
+    // Apply new transaction effect on balance
+    const newAmount = Number(amount);
+    if (type === 'purchase') {
+      trader.balance += newAmount;
+    } else if (type === 'payment') {
+      trader.balance -= newAmount;
+    }
+
+    // Update transaction fields
+    transaction.type = type;
+    transaction.amount = newAmount;
+    transaction.scooterModel = type === 'purchase' ? scooterModel : '';
+    transaction.notes = notes;
+    if (date) {
+      transaction.date = new Date(date);
+    }
+
+    await transaction.save();
+    await trader.save();
+
+    res.json({ transaction, newBalance: trader.balance });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
