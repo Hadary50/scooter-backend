@@ -6,7 +6,8 @@ const traderTransactionSchema = new mongoose.Schema({
   scooterModel: { type: String }, // Only required if type is purchase
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
-  notes: { type: String }
+  notes: { type: String },
+  attachment: { type: String } // Base64 encoded image
 });
 
 module.exports = mongoose.model('TraderTransaction', traderTransactionSchema);

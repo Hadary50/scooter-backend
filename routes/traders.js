@@ -43,7 +43,7 @@ router.post('/:id/transactions', async (req, res) => {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
 
-    const { type, amount, scooterModel, notes, date } = req.body;
+    const { type, amount, scooterModel, notes, date, attachment } = req.body;
     
     const transaction = new TraderTransaction({
       traderId: trader._id,
@@ -51,7 +51,8 @@ router.post('/:id/transactions', async (req, res) => {
       amount: Number(amount),
       scooterModel,
       notes,
-      date: date ? new Date(date) : Date.now()
+      date: date ? new Date(date) : Date.now(),
+      attachment
     });
 
     await transaction.save();
@@ -82,7 +83,7 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
       return res.status(400).json({ message: 'Transaction does not belong to this trader' });
     }
 
-    const { type, amount, scooterModel, notes, date } = req.body;
+    const { type, amount, scooterModel, notes, date, attachment } = req.body;
 
     // Revert old transaction effect on balance
     if (transaction.type === 'purchase') {
@@ -104,6 +105,9 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
     transaction.amount = newAmount;
     transaction.scooterModel = type === 'purchase' ? scooterModel : '';
     transaction.notes = notes;
+    if (attachment !== undefined) {
+      transaction.attachment = attachment;
+    }
     if (date) {
       transaction.date = new Date(date);
     }
@@ -140,6 +144,24 @@ router.delete('/:traderId/transactions/:txId', async (req, res) => {
     await trader.save();
 
     res.json({ message: 'Transaction deleted successfully', newBalance: trader.balance });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete a trader and all their transactions
+router.delete('/:id', async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.id);
+    if (!trader) return res.status(404).json({ message: 'Trader not found' });
+
+    // Delete all transactions associated with this trader
+    await TraderTransaction.deleteMany({ traderId: trader._id });
+    
+    // Delete the trader
+    await Trader.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Trader and all associated transactions deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
