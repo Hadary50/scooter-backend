@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const GeneralTransaction = require('../models/GeneralTransaction');
+const auth = require('../middleware/auth');
 
 // Get all general transactions
 router.get('/', async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Add a general transaction (مصروفات أو موردين - علينا)
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const tx = new GeneralTransaction(req.body);
   try {
     const newTx = await tx.save();
@@ -24,7 +25,7 @@ router.post('/', async (req, res) => {
 });
 
 // Delete a general transaction
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     await GeneralTransaction.findByIdAndDelete(req.params.id);
     res.json({ message: 'Deleted' });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Trader = require('../models/Trader');
 const TraderTransaction = require('../models/TraderTransaction');
+const auth = require('../middleware/auth');
 
 // Get all traders
 router.get('/', async (req, res) => {
@@ -19,7 +20,8 @@ router.get('/:id', async (req, res) => {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
     
-    const transactions = await TraderTransaction.find({ traderId: req.params.id }).sort({ date: -1 });
+    // Sort transactions by date ascending (oldest first) so the ledger flows naturally
+    const transactions = await TraderTransaction.find({ traderId: req.params.id }).sort({ date: 1 });
     res.json({ trader, transactions });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -27,7 +29,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Add a new trader
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   const trader = new Trader(req.body);
   try {
     const newTrader = await trader.save();
@@ -38,7 +40,7 @@ router.post('/', async (req, res) => {
 });
 
 // Add a transaction for a trader (purchase or payment)
-router.post('/:id/transactions', async (req, res) => {
+router.post('/:id/transactions', auth, async (req, res) => {
   try {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
@@ -71,8 +73,23 @@ router.post('/:id/transactions', async (req, res) => {
   }
 });
 
+// Toggle invoice status
+router.patch('/:traderId/transactions/:txId/toggle-invoice', auth, async (req, res) => {
+  try {
+    const transaction = await TraderTransaction.findById(req.params.txId);
+    if (!transaction) return res.status(404).json({ message: 'Transaction not found' });
+    
+    transaction.isInvoiced = !transaction.isInvoiced;
+    await transaction.save();
+    
+    res.json({ transaction });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Edit a transaction
-router.put('/:traderId/transactions/:txId', async (req, res) => {
+router.put('/:traderId/transactions/:txId', auth, async (req, res) => {
   try {
     const trader = await Trader.findById(req.params.traderId);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
@@ -83,7 +100,7 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
       return res.status(400).json({ message: 'Transaction does not belong to this trader' });
     }
 
-    const { type, amount, scooterModel, notes, date, attachment } = req.body;
+    const { type, amount, scooterModel, notes, date, attachment, isInvoiced } = req.body;
 
     // Revert old transaction effect on balance
     if (transaction.type === 'purchase') {
@@ -111,6 +128,9 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
     if (date) {
       transaction.date = new Date(date);
     }
+    if (isInvoiced !== undefined) {
+      transaction.isInvoiced = isInvoiced;
+    }
 
     await transaction.save();
     await trader.save();
@@ -122,7 +142,7 @@ router.put('/:traderId/transactions/:txId', async (req, res) => {
 });
 
 // Delete a transaction
-router.delete('/:traderId/transactions/:txId', async (req, res) => {
+router.delete('/:traderId/transactions/:txId', auth, async (req, res) => {
   try {
     const trader = await Trader.findById(req.params.traderId);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });
@@ -150,7 +170,7 @@ router.delete('/:traderId/transactions/:txId', async (req, res) => {
 });
 
 // Delete a trader and all their transactions
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });

@@ -7,7 +7,8 @@ const traderTransactionSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   date: { type: Date, default: Date.now },
   notes: { type: String },
-  attachment: { type: String } // Base64 encoded image
+  attachment: { type: String }, // Base64 encoded image
+  isInvoiced: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('TraderTransaction', traderTransactionSchema);

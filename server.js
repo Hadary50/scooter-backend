@@ -5,6 +5,8 @@ const cors = require('cors');
 
 const traderRoutes = require('./routes/traders');
 const generalRoutes = require('./routes/general');
+const stockRoutes = require('./routes/stock');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -49,6 +51,8 @@ app.get('/', (req, res) => {
 // Routes (AFTER DB middleware)
 app.use('/api/traders', traderRoutes);
 app.use('/api/general', generalRoutes);
+app.use('/api/stock', stockRoutes);
+app.use('/api/auth', authRoutes);
 
 // Dashboard
 app.get('/api/dashboard', async (req, res) => {
