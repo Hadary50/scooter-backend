@@ -7,6 +7,7 @@ const traderRoutes = require('./routes/traders');
 const generalRoutes = require('./routes/general');
 const stockRoutes = require('./routes/stock');
 const authRoutes = require('./routes/auth');
+const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -55,7 +56,7 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/auth', authRoutes);
 
 // Dashboard
-app.get('/api/dashboard', async (req, res) => {
+app.get('/api/dashboard', auth, async (req, res) => {
   try {
     const Trader = require('./models/Trader');
     const GeneralTransaction = require('./models/GeneralTransaction');

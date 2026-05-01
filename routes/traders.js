@@ -5,7 +5,7 @@ const TraderTransaction = require('../models/TraderTransaction');
 const auth = require('../middleware/auth');
 
 // Get all traders
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const traders = await Trader.find().sort({ createdAt: -1 });
     res.json(traders);
@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a single trader and their transactions
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const trader = await Trader.findById(req.params.id);
     if (!trader) return res.status(404).json({ message: 'Trader not found' });

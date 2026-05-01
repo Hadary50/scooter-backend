@@ -4,7 +4,7 @@ const GeneralTransaction = require('../models/GeneralTransaction');
 const auth = require('../middleware/auth');
 
 // Get all general transactions
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const tx = await GeneralTransaction.find().sort({ date: -1 });
     res.json(tx);
