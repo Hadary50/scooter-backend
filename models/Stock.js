@@ -7,6 +7,7 @@ const stockSchema = new mongoose.Schema({
   engineNumber: { type: String, required: true, unique: true },
   showroomName: { type: String, required: true },
   status: { type: String, enum: ['consignment', 'sold'], default: 'consignment' }, // consignment = أمانة, sold = مباع
+  price: { type: Number, default: 0 },
   notes: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
