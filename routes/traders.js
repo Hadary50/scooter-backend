@@ -160,6 +160,12 @@ router.delete('/:traderId/transactions/:txId', auth, async (req, res) => {
       trader.balance += transaction.amount;
     }
 
+    // If this transaction was linked to a stock item, restore it back to consignment status
+    if (transaction.stockItemId) {
+      const Stock = require('../models/Stock');
+      await Stock.findByIdAndUpdate(transaction.stockItemId, { status: 'consignment' });
+    }
+
     await TraderTransaction.findByIdAndDelete(req.params.txId);
     await trader.save();
 

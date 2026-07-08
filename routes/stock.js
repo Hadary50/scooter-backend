@@ -59,7 +59,8 @@ router.post('/:id/invoice', auth, async (req, res) => {
       date: date ? new Date(date) : Date.now(),
       notes: notes || 'تم تحويل من مخزون الأمانة بفاتورة',
       attachment,
-      isInvoiced: true
+      isInvoiced: true,
+      stockItemId: stockItem._id
     });
     await transaction.save();
 
