@@ -57,9 +57,9 @@ router.post('/:id/invoice', auth, async (req, res) => {
       scooterModel: scooterDetails,
       amount: Number(amount),
       date: date ? new Date(date) : Date.now(),
-      notes: notes || 'تم تحويل من مخزون الأمانة بفاتورة',
+      notes: notes || (req.body.isInvoiced ? 'تم تحويل من مخزون الأمانة بفاتورة' : 'تم تحويل من مخزون الأمانة بدون فاتورة'),
       attachment,
-      isInvoiced: true,
+      isInvoiced: req.body.isInvoiced !== undefined ? req.body.isInvoiced : true,
       stockItemId: stockItem._id
     });
     await transaction.save();
