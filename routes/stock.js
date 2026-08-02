@@ -9,12 +9,20 @@ const TraderTransaction = require('../models/TraderTransaction');
 // Get all stock items
 router.get('/', async (req, res) => {
   try {
-    const { showroomName, status } = req.query;
+    const { showroomName, status, traderId } = req.query;
     let query = {};
-    if (showroomName) query.showroomName = showroomName;
     if (status) query.status = status;
     
-    const stock = await Stock.find(query).sort({ createdAt: -1 });
+    // Support OR query for backward compatibility (traderId or exact showroomName)
+    if (traderId && showroomName) {
+      query.$or = [{ traderId }, { showroomName }];
+    } else if (traderId) {
+      query.traderId = traderId;
+    } else if (showroomName) {
+      query.showroomName = showroomName;
+    }
+    
+    const stock = await Stock.find(query).sort({ createdAt: -1 }).populate('traderId', 'name');
     res.json(stock);
   } catch (error) {
     res.status(500).json({ message: error.message });

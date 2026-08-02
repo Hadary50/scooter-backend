@@ -6,6 +6,7 @@ const stockSchema = new mongoose.Schema({
   chassisNumber: { type: String, required: true, unique: true },
   engineNumber: { type: String, required: true, unique: true },
   showroomName: { type: String, required: true },
+  traderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trader' }, // Linked to Trader
   status: { type: String, enum: ['consignment', 'sold'], default: 'consignment' }, // consignment = أمانة, sold = مباع
   price: { type: Number, default: 0 },
   notes: { type: String },
