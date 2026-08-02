@@ -39,6 +39,23 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
+// Update trader details (name, phone)
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const trader = await Trader.findById(req.params.id);
+    if (!trader) return res.status(404).json({ message: 'Trader not found' });
+
+    const { name, phone } = req.body;
+    if (name) trader.name = name;
+    if (phone) trader.phone = phone;
+
+    await trader.save();
+    res.json(trader);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Add a transaction for a trader (purchase or payment)
 router.post('/:id/transactions', auth, async (req, res) => {
   try {
